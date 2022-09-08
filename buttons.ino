@@ -17,12 +17,12 @@ unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 
-BfButton btn1(BfButton::STANDALONE_DIGITAL, 36, false, LOW);
-BfButton btn2(BfButton::STANDALONE_DIGITAL, 39, false, LOW);
-BfButton btn3(BfButton::STANDALONE_DIGITAL, 34, false, LOW);
-BfButton btn4(BfButton::STANDALONE_DIGITAL, 35, false, LOW);
-BfButton btn5(BfButton::STANDALONE_DIGITAL, 32, false, LOW);
-BfButton btn6(BfButton::STANDALONE_DIGITAL, 33, false, LOW);
+BfButton btn1(BfButton::STANDALONE_DIGITAL, 39, false, LOW);
+BfButton btn2(BfButton::STANDALONE_DIGITAL, 34, false, LOW);
+BfButton btn3(BfButton::STANDALONE_DIGITAL, 35, false, LOW);
+BfButton btn4(BfButton::STANDALONE_DIGITAL, 32, false, LOW);
+BfButton btn5(BfButton::STANDALONE_DIGITAL, 33, false, LOW);
+
 
 void buttonSetup() {
 
@@ -50,23 +50,21 @@ void buttonSetup() {
     .onDoublePress(button5Handler)      // default timeout
     .onPressFor(button5Handler, 1000);  // custom timeout for 1 second
 
-  btn6.onPress(button6Handler)
-    .onDoublePress(button6Handler)      // default timeout
-    .onPressFor(button6Handler, 1000);  // custom timeout for 1 second
-
   Serial.println("buttons configured");
 }
 
 void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
+  Serial.print(" button hander 1 ");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      nextLEDPattern();
+      bitWrite(futureSong, !bitRead(futureSong, 0), 0);
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
+       nextLEDPattern();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
@@ -78,14 +76,17 @@ void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 
 void button2Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
+   Serial.print(" button hander 2 ");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      nextSong();
+      bitWrite(futureSong, !bitRead(futureSong, 1), 1);
+      
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
+      nextSong();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
@@ -95,14 +96,17 @@ void button2Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 
 void button3Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
+   Serial.print(" button hander 3 ");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      playPause();
+      bitWrite(futureSong, !bitRead(futureSong, 2), 2);
+      
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
+      playPause();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
@@ -112,11 +116,12 @@ void button3Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 
 void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
+   Serial.print(" button hander 4 ");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      requestStop = 1;
+       bitWrite(futureSong, !bitRead(futureSong, 3), 3);
       break;
     case BfButton::DOUBLE_PRESS:
       toggleMode();
@@ -130,6 +135,7 @@ void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 
 void button5Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
+   Serial.print(" button hander 5 ");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
@@ -146,26 +152,6 @@ void button5Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   }
 }
 
-void button6Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-
-  switch (pattern) {
-    case BfButton::SINGLE_PRESS:
-      Serial.println(" pressed.");
-      previousLEDPattern();
-      break;
-    case BfButton::DOUBLE_PRESS:
-      Serial.println(" double pressed.");
-      break;
-    case BfButton::LONG_PRESS:
-      Serial.println(" long pressed.");
-      audioDown();
-      btn->updateState(BfButton::IDLE);
-      break;
-  }
-}
-
-
 
 void buttonLoop(void *pvParameters) {
   // read the state of the switch into a local variable:
@@ -177,6 +163,5 @@ void buttonLoop(void *pvParameters) {
     btn3.read();
     btn4.read();
     btn5.read();
-    btn6.read();
   }
 }

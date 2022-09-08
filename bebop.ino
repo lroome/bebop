@@ -11,9 +11,13 @@
 
 
 // I2s
-#define I2S_DOUT 25
-#define I2S_LRC 26
-#define I2S_BCLK 27
+//#define I2S_DOUT 25
+//#define I2S_LRC 26
+//#define I2S_BCLK 27
+
+#define I2S_DOUT 27
+#define I2S_LRC 25
+#define I2S_BCLK 26
 
 #define SS 5
 #define MOSI 23
@@ -21,9 +25,9 @@
 #define SCK 18
 
 #define INITIAL_GAIN 1.0
-#define MAX_GAIN  4.0
-#define MIN_GAIN  0.0
-#define GAIN_STEP  0.5
+#define MAX_GAIN 4.0
+#define MIN_GAIN 0.0
+#define GAIN_STEP 0.5
 volatile float gain = INITIAL_GAIN;
 
 #define FIRST_TRACK 1
@@ -52,9 +56,12 @@ volatile int lastBeat = -1;
 volatile int color_loops = 0;
 volatile int row_loops = 0;
 
+volatile uint8_t currentSong = 0;
+volatile uint8_t futureSong = 0;
+
 hw_timer_t *My_timer = NULL;
 
-void IRAM_ATTR onTimer(){
+void IRAM_ATTR onTimer() {
   beats += 1;
 }
 
@@ -119,25 +126,25 @@ void audioSetup() {
 
   out->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
   out->SetGain(INITIAL_GAIN);
-  file = new AudioFileSourceSD("/group1/TRACK1.mp3");
+  file = new AudioFileSourceSD("/group1/1.mp3");
   mp3->begin(file, out);  //Start playing the track loaded
   mp3->stop();
 }
 
 void audioUp() {
   gain += GAIN_STEP;
-  if (gain > MAX_GAIN) gain = MAX_GAIN; 
+  if (gain > MAX_GAIN) gain = MAX_GAIN;
   out->SetGain(gain);
 }
 
 void audioDown() {
-   gain -= GAIN_STEP;
-  if (gain < MIN_GAIN) gain = MIN_GAIN; 
+  gain -= GAIN_STEP;
+  if (gain < MIN_GAIN) gain = MIN_GAIN;
   out->SetGain(gain);
 }
 
 void nextSong() {
-    Serial.println("nextSong<<");
+  Serial.println("nextSong<<");
   Serial.println(track);
   track++;
   if (track > LAST_TRACK) track = FIRST_TRACK;
@@ -191,18 +198,18 @@ void stop() {
 
 // play or pause the track
 void playPause() {
-  if (playing) {   
-    Serial.println("Pause"); 
+  if (playing) {
+    Serial.println("Pause");
     pauseLocation = file->getPos();
     Serial.println(pauseLocation);
     out->stop();
     actionsOff();
-    
+
   } else if (pauseLocation > 0) {
     Serial.println("Resume");
     out->begin();
     actionsOn();
-   
+
     pauseLocation = 0;
   } else {
     Serial.println("Play");
@@ -220,6 +227,7 @@ void setup() {
   while (!Serial) {
     ;  // wait for serial port to connect. Needed for native USB port only
   }
+
   buttonSetup();
   lightsSetup();
   sdSetup();
@@ -227,31 +235,45 @@ void setup() {
 
   // this has to be the last call
   initializeTasks();
+  
+  // remove these lines before shipping.
+  track = 1;
+  setTrack(0);
 }
 
 
 void setTrack(int pos) {
-    //Stop the current track if playing
-    if (playing && mp3->isRunning()) mp3->stop();
-    char buffer[20];
-    sprintf(buffer, "/group1/Track%d.mp3", track);
-    Serial.println(buffer);
+  //Stop the current track if playing
+  if (playing && mp3->isRunning()) mp3->stop();
+  char buffer[20];
+  sprintf(buffer, "/group1/%d.mp3", track);
+  Serial.println(buffer);
 
-    file = new AudioFileSourceSD(buffer);
-    if (pos > 0)
-    {
-       Serial.println(file->seek(pos, SEEK_SET));
-    }
-    mp3->begin(file, out);  //Start playing the track loaded
-    lighting = track;
-    loadTrack = 0;
+  file = new AudioFileSourceSD(buffer);
+  if (pos > 0) {
+    Serial.println(file->seek(pos, SEEK_SET));
+  }
+  mp3->begin(file, out);  //Start playing the track loaded
+  
+  lighting = track;
+  loadTrack = 0;
+  playing = 1;
 }
 
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if (loadTrack)  setTrack(pauseLocation) ; //Load the track we want to play
- 
+  //
+
+  if (futureSong != currentSong) {
+    Serial.println(futureSong);
+    Serial.println(currentSong);
+    loadTrack = futureSong;
+    currentSong = futureSong;
+  }
+
+  if (loadTrack) setTrack(pauseLocation);  //Load the track we want to play
+
   if (playing && mp3->isRunning()) {
     if (!mp3->loop() || requestStop) {
       stop();
