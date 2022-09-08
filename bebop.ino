@@ -55,6 +55,8 @@ volatile int beats = 0;
 volatile int lastBeat = -1;
 volatile int color_loops = 0;
 volatile int row_loops = 0;
+volatile int col_loops = 0;
+volatile int curr_dot = 0;
 
 volatile uint8_t currentSong = 0;
 volatile uint8_t futureSong = 0;
@@ -108,7 +110,7 @@ void initializeTasks() {
   My_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(My_timer, &onTimer, true);
   timerAlarmWrite(My_timer, 500000, true);
-  //timerAlarmEnable(My_timer); //Just Enable
+  timerAlarmEnable(My_timer); //start timer
 }
 
 void sdSetup() {
@@ -182,6 +184,10 @@ void actionsOn() {
 void actionsOff() {
   playing = 0;
   lighting = 0;
+  curr_dot = 0;
+  col_loops = 0;
+  row_loops = 0;
+
   timerAlarmDisable(My_timer);
 }
 

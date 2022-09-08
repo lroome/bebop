@@ -30,6 +30,16 @@ const int bottomRing[] = { 0, 5, 6, 11, 12 };
 const int middleRing[] = { 1, 4, 7, 10, 13 };
 const int topRing[] = { 2, 3, 8, 9, 14 };
 
+
+const int firstCol[] = { 0, 1, 2 };
+const int secondCol[] = { 5, 4, 3 };
+const int thirdCol[] = { 6, 7, 8 };
+const int fourthCol[] = { 11, 10, 9 };
+const int fifthCol[] = { 12, 13, 14 };
+
+const int starfish[] = { 0, 1, 2,9, 10, 11, 10, 9, 3, 4, 5, 4, 3, 14, 13, 12, 13, 14, 8, 7, 6, 7, 8, 2, 1 };
+
+
 #define NUM_ROWS 3
 #define LEDS_PER_ROW 5
 
@@ -83,6 +93,12 @@ void setRing(const int ring[], CRGB color) {
   }
 }
 
+void setCol(const int column[], CRGB color) {
+  for (int dot = 0; dot < LEDS_PER_COL; dot++) {
+    setIndividualDot(column[dot], color);
+  }
+}
+
 void clearAll() {
   for (int dot = 0; dot < NUM_LEDS; dot++) {
     // clear this led
@@ -112,7 +128,85 @@ void fade() {
   delay(50);
 }
 
-void track2Color() {
+void setAColumn() {
+  switch (col_loops) {
+    case 0:
+      setCol(firstCol, currentColor);
+      break;
+    case 1:
+      setCol(secondCol, currentColor);
+      break;
+    case 2:
+      setCol(thirdCol, currentColor);
+      break;
+    case 3:
+      setCol(fourthCol, currentColor);
+      break;
+    case 4:
+      setCol(fifthCol, currentColor);
+      break;
+  }
+}
+
+
+void track4Display() {
+
+  clearAll();
+
+  setAColumn();
+
+  col_loops = (col_loops + 1) % 5;
+
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(500);
+}
+
+void track8Display() {
+
+  clearAll();
+
+  setAColumn();
+
+  
+  col_loops = (col_loops - 1);
+
+  if (col_loops == -1) {
+    col_loops = 4;    
+  }
+
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(250);
+}
+
+void track7Display() {
+  clearAll();
+  
+  setIndividualDot(starfish[curr_dot], currentColor);
+
+  curr_dot = curr_dot - 1;
+  if (curr_dot < 0) {curr_dot = 23;}
+
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(250);
+}
+
+void track6Display() {
+  clearAll();
+  
+  setIndividualDot(starfish[curr_dot], currentColor);
+
+  curr_dot = (curr_dot + 1) % 24;
+  
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(250);
+}
+
+
+void track5Color() {
   switch (color_loops) {
     case 0:
       currentColor = CRGB::Blue;
@@ -136,40 +230,34 @@ void track2Color() {
       currentColor = CRGB::Blue;
       break;
   }
-  
 }
 
-void track2Display() {
-  if (lastBeat != beats) {
+void track5Display() {
 
-    clearAll();
-    if (lighting) {
-      track2Color();
-      switch (row_loops % 3) {
-        case 0:
-          setRing(topRing, currentColor);
-          break;
-        case 1:
-          setRing(middleRing, currentColor);
-          break;
-        case 2:
-          setRing(bottomRing, currentColor);
-          break;
-      }
-      FastLED.show();
-      lastBeat = beats;
-      row_loops = (row_loops + 1) % 3;
-      color_loops = (color_loops + 1) % 17;
+  clearAll();
+  if (lighting) {
+    track5Color();
+    switch (row_loops % 3) {
+      case 0:
+        setRing(topRing, currentColor);
+        break;
+      case 1:
+        setRing(middleRing, currentColor);
+        break;
+      case 2:
+        setRing(bottomRing, currentColor);
+        break;
     }
+    row_loops = (row_loops + 1) % 3;
+    color_loops = (color_loops + 1) % 17;
   }
+
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(500);
 }
 
 void track1Display() {
-  if (lastBeat != beats) {
-      lastBeat = beats;
-      row_loops = (row_loops + 1) % 3;
-      color_loops = (color_loops + 1) % 17;
-  }
 
   gPatterns[5]();
 
@@ -185,12 +273,25 @@ void track1Display() {
 }
 
 
+
+void track2Display() {
+
+
+  gPatterns[1]();
+
+  //       // send the 'leds' array out to the actual LED strip
+  FastLED.show();
+  //       // insert a delay to keep the framerate modest
+  FastLED.delay(1000 / FRAMES_PER_SECOND);
+
+  //       // do some periodic updates
+  EVERY_N_MILLISECONDS(20) {
+    gHue++;
+  }  // slowly cycle the "base color" through the rainbow
+}
+
 void track3Display() {
-  if (lastBeat != beats) {
-      lastBeat = beats;
-      row_loops = (row_loops + 1) % 3;
-      color_loops = (color_loops + 1) % 17;
-  }
+
 
   gPatterns[0]();
 
@@ -297,15 +398,28 @@ void LEDController(void* pvParameters) {
   for (;;) {
     switch (lighting) {
       case 1:
-        Serial.println("case 1");
         track1Display();
         break;
       case 2:
         track2Display();
         break;
       case 3:
-        Serial.println("case 3");
         track3Display();
+        break;
+      case 4:
+        track4Display();
+        break;
+      case 5: 
+        track5Display();
+        break;
+      case 6:
+        track6Display();
+        break;
+       case 7:
+        track7Display();
+        break;
+      case 8:
+        track8Display();
         break;
       default:
         clearAll();
