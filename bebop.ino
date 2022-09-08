@@ -192,6 +192,8 @@ void stop() {
   requestStop = 0;
   resetBeats();
   mp3->stop();
+  futureSong = 0;
+  currentSong = 0;
   Serial.println("Stopped");
   Serial.println(beats);
 }
@@ -235,7 +237,7 @@ void setup() {
 
   // this has to be the last call
   initializeTasks();
-  
+
   // remove these lines before shipping.
   track = 1;
   setTrack(0);
@@ -244,7 +246,7 @@ void setup() {
 
 void setTrack(int pos) {
   //Stop the current track if playing
-  if (playing && mp3->isRunning()) mp3->stop();
+  
   char buffer[20];
   sprintf(buffer, "/group1/%d.mp3", track);
   Serial.println(buffer);
@@ -253,6 +255,7 @@ void setTrack(int pos) {
   if (pos > 0) {
     Serial.println(file->seek(pos, SEEK_SET));
   }
+  if (playing && mp3->isRunning()) mp3->stop();
   mp3->begin(file, out);  //Start playing the track loaded
   
   lighting = track;
@@ -261,16 +264,22 @@ void setTrack(int pos) {
 }
 
 
+void changeSongAndLights() {
+  if (futureSong != currentSong) {
+    track = futureSong;
+    lighting = futureSong;
+    currentSong = futureSong;
+    pauseLocation = file->getPos();
+    loadTrack = 1;
+    
+  }
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
   //
 
-  if (futureSong != currentSong) {
-    Serial.println(futureSong);
-    Serial.println(currentSong);
-    loadTrack = futureSong;
-    currentSong = futureSong;
-  }
+  changeSongAndLights();
 
   if (loadTrack) setTrack(pauseLocation);  //Load the track we want to play
 

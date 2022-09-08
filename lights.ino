@@ -297,13 +297,16 @@ void LEDController(void* pvParameters) {
   for (;;) {
     switch (lighting) {
       case 1:
+        Serial.println("case 1");
         track1Display();
         break;
       case 2:
         track2Display();
         break;
       case 3:
+        Serial.println("case 3");
         track3Display();
+        break;
       default:
         clearAll();
         delay(50);

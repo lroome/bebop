@@ -56,11 +56,11 @@ void buttonSetup() {
 void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
   Serial.print(" button hander 1 ");
-
+  
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      bitWrite(futureSong, !bitRead(futureSong, 0), 0);
+      bitWrite(futureSong, 0, !bitRead(futureSong, 0)); 
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
@@ -81,12 +81,11 @@ void button2Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      bitWrite(futureSong, !bitRead(futureSong, 1), 1);
-      
+      bitWrite(futureSong, 1, !bitRead(futureSong, 1));
+      Serial.print(futureSong);
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
-      nextSong();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
@@ -101,8 +100,8 @@ void button3Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      bitWrite(futureSong, !bitRead(futureSong, 2), 2);
-      
+      bitWrite(futureSong, 2, !bitRead(futureSong, 2));
+      Serial.print(futureSong);
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
@@ -121,7 +120,8 @@ void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-       bitWrite(futureSong, !bitRead(futureSong, 3), 3);
+       bitWrite(futureSong, 3, !bitRead(futureSong, 3));
+       Serial.print(futureSong);
       break;
     case BfButton::DOUBLE_PRESS:
       toggleMode();
@@ -136,6 +136,7 @@ void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 void button5Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   Serial.print(btn->getID());
    Serial.print(" button hander 5 ");
+   Serial.print(futureSong);
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
