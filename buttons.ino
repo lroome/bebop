@@ -1,4 +1,4 @@
-
+#define ENABLE_DEBUG
 
 // constants won't change. They're used here to set pin numbers:
 
@@ -50,13 +50,13 @@ void buttonSetup() {
     .onDoublePress(button5Handler)      // default timeout
     .onPressFor(button5Handler, 1000);  // custom timeout for 1 second
 
-  Serial.println("buttons configured");
+  DEBUG_I("buttons configured");
 }
 
 void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-  Serial.print(" button hander 1 ");
   
+  Serial.println("Button hander 1");
+
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
@@ -64,7 +64,6 @@ void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
-       nextLEDPattern();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
@@ -75,14 +74,13 @@ void button1Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 }
 
 void button2Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-   Serial.print(" button hander 2 ");
+ 
+ Serial.println("Button hander 2");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
       bitWrite(futureSong, 1, !bitRead(futureSong, 1));
-      Serial.print(futureSong);
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
@@ -94,14 +92,13 @@ void button2Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 }
 
 void button3Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-   Serial.print(" button hander 3 ");
+ Serial.println("Button hander 3");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
       bitWrite(futureSong, 2, !bitRead(futureSong, 2));
-      Serial.print(futureSong);
+     
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
@@ -114,14 +111,13 @@ void button3Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 }
 
 void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-   Serial.print(" button hander 4 ");
+   Serial.println("Button hander 4");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
        bitWrite(futureSong, 3, !bitRead(futureSong, 3));
-       Serial.print(futureSong);
+      
       break;
     case BfButton::DOUBLE_PRESS:
       toggleMode();
@@ -134,21 +130,20 @@ void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
 }
 
 void button5Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
-  Serial.print(btn->getID());
-   Serial.print(" button hander 5 ");
-   Serial.print(futureSong);
+ Serial.println("Button hander 5");
 
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-     
+      audio_mode = !audio_mode;
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");
-      previousSong();
       break;
     case BfButton::LONG_PRESS:
       Serial.println(" long pressed.");
+      audioDown();
+      btn->updateState(BfButton::IDLE);
       break;
   }
 }

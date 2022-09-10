@@ -1,4 +1,5 @@
 // leds
+#define ENABLE_DEBUG
 
 const uint8_t kMatrixWidth = 5;
 const uint8_t kMatrixHeight = 3;
@@ -37,7 +38,7 @@ const int thirdCol[] = { 6, 7, 8 };
 const int fourthCol[] = { 11, 10, 9 };
 const int fifthCol[] = { 12, 13, 14 };
 
-const int starfish[] = { 0, 1, 2,9, 10, 11, 10, 9, 3, 4, 5, 4, 3, 14, 13, 12, 13, 14, 8, 7, 6, 7, 8, 2, 1 };
+const int starfish[] = { 0, 1, 2, 9, 10, 11, 10, 9, 3, 4, 5, 4, 3, 14, 13, 12, 13, 14, 8, 7, 6, 7, 8, 2, 1 };
 
 
 #define NUM_ROWS 3
@@ -99,6 +100,13 @@ void setCol(const int column[], CRGB color) {
   }
 }
 
+void setAll() {
+  for (int dot = 0; dot < NUM_LEDS; dot++) {
+    // set this led
+    leds[ledOrder[dot]] = currentColor;
+  }
+  FastLED.show();
+}
 void clearAll() {
   for (int dot = 0; dot < NUM_LEDS; dot++) {
     // clear this led
@@ -148,65 +156,81 @@ void setAColumn() {
   }
 }
 
-
-void track4Display() {
-
+void loopColumns(int direction, int speed) {
   clearAll();
-
+  pickColor();
   setAColumn();
 
-  col_loops = (col_loops + 1) % 5;
+  if (direction == 1) {
+    col_loops = (col_loops + 1) % 5;
+  } else {
 
-  FastLED.show();
-  // insert a delay to keep the framerate modest
-  FastLED.delay(500);
-}
+    col_loops = (col_loops - 1);
 
-void track8Display() {
-
-  clearAll();
-
-  setAColumn();
-
-  
-  col_loops = (col_loops - 1);
-
-  if (col_loops == -1) {
-    col_loops = 4;    
+    if (col_loops == -1) {
+      col_loops = 4;
+    }
   }
-
   FastLED.show();
   // insert a delay to keep the framerate modest
-  FastLED.delay(250);
+  FastLED.delay(speed);
 }
 
-void track7Display() {
+
+void starFish(int direction, int speed) {
   clearAll();
-  
+  pickColor();
   setIndividualDot(starfish[curr_dot], currentColor);
 
-  curr_dot = curr_dot - 1;
-  if (curr_dot < 0) {curr_dot = 23;}
+  if (direction == 1 ) {
+     curr_dot = (curr_dot + 1) % 24;
+  } else {
+    curr_dot = curr_dot - 1;
+    if (curr_dot < 0) { curr_dot = 23; }
+  }
+  
 
   FastLED.show();
   // insert a delay to keep the framerate modest
-  FastLED.delay(250);
+  FastLED.delay(speed);
 }
 
-void track6Display() {
+
+void worm(int direction, int speed) {
   clearAll();
+  pickColor();
   
   setIndividualDot(starfish[curr_dot], currentColor);
-
-  curr_dot = (curr_dot + 1) % 24;
   
+  if (direction == 1 ) {
+    if (curr_dot > 0 ) {
+      setIndividualDot(starfish[curr_dot - 1], currentColor);
+    }
+    if (curr_dot > 1) {
+      setIndividualDot(starfish[curr_dot - 2], currentColor);      
+    }
+    
+     curr_dot = (curr_dot + 1) % 24;
+  } else {
+    if (curr_dot < 23)  {
+       setIndividualDot(starfish[curr_dot + 1 ], currentColor);
+    }
+    if (curr_dot < 22)  {
+       setIndividualDot(starfish[curr_dot + 2], currentColor);
+    }
+
+    curr_dot = curr_dot - 1;
+    if (curr_dot < 0) { curr_dot = 23; }
+  }
+  
+
   FastLED.show();
   // insert a delay to keep the framerate modest
-  FastLED.delay(250);
+  FastLED.delay(speed);
 }
 
 
-void track5Color() {
+void pickColor() {
   switch (color_loops) {
     case 0:
       currentColor = CRGB::Blue;
@@ -230,13 +254,14 @@ void track5Color() {
       currentColor = CRGB::Blue;
       break;
   }
+  color_loops = (color_loops + 1) % 17;
 }
 
-void track5Display() {
+void ringToss(int direction, int speed) {
 
   clearAll();
   if (lighting) {
-    track5Color();
+    pickColor();
     switch (row_loops % 3) {
       case 0:
         setRing(topRing, currentColor);
@@ -248,18 +273,23 @@ void track5Display() {
         setRing(bottomRing, currentColor);
         break;
     }
-    row_loops = (row_loops + 1) % 3;
-    color_loops = (color_loops + 1) % 17;
+    if (direction == 1) {
+      row_loops = (row_loops + 1) % 3;
+    } else {
+      row_loops--;
+      if (row_loops < 0 ) { row_loops = 2;}
+    }
   }
 
   FastLED.show();
   // insert a delay to keep the framerate modest
-  FastLED.delay(500);
+  FastLED.delay(speed);
 }
 
-void track1Display() {
 
-  gPatterns[5]();
+void predefinedPattern(int patternNum) {
+  if (patternNum > 5 || patternNum < 0) { return; }
+  gPatterns[patternNum]();
 
   //       // send the 'leds' array out to the actual LED strip
   FastLED.show();
@@ -272,39 +302,6 @@ void track1Display() {
   }  // slowly cycle the "base color" through the rainbow
 }
 
-
-
-void track2Display() {
-
-
-  gPatterns[1]();
-
-  //       // send the 'leds' array out to the actual LED strip
-  FastLED.show();
-  //       // insert a delay to keep the framerate modest
-  FastLED.delay(1000 / FRAMES_PER_SECOND);
-
-  //       // do some periodic updates
-  EVERY_N_MILLISECONDS(20) {
-    gHue++;
-  }  // slowly cycle the "base color" through the rainbow
-}
-
-void track3Display() {
-
-
-  gPatterns[0]();
-
-  //       // send the 'leds' array out to the actual LED strip
-  FastLED.show();
-  //       // insert a delay to keep the framerate modest
-  FastLED.delay(1000 / FRAMES_PER_SECOND);
-
-  //       // do some periodic updates
-  EVERY_N_MILLISECONDS(20) {
-    gHue++;
-  }  // slowly cycle the "base color" through the rainbow
-}
 
 void demos() {
   fade();
@@ -393,38 +390,80 @@ void demos() {
   }
 }
 
-
-void LEDController(void* pvParameters) {
-  for (;;) {
-    switch (lighting) {
+void followSong() {
+  switch (lighting) {
       case 1:
-        track1Display();
+        predefinedPattern(5);
         break;
       case 2:
-        track2Display();
+        predefinedPattern(1);
         break;
       case 3:
-        track3Display();
+        predefinedPattern(0);
         break;
       case 4:
-        track4Display();
+        loopColumns(1,250);
         break;
-      case 5: 
-        track5Display();
+      case 5:
+        ringToss(1, 250);
         break;
       case 6:
-        track6Display();
+        starFish(1,250);
         break;
-       case 7:
-        track7Display();
+      case 7:
+        starFish(0,250);
         break;
       case 8:
-        track8Display();
+        loopColumns(0,250);
         break;
+      case 9:
+        predefinedPattern(2);
+        break;
+      case 10:
+        predefinedPattern(3);
+        break;
+      case 11:
+        predefinedPattern(4);
+        break;
+      case 12:
+        ringToss(1, 250);
+        break;
+      case 13:
+        fade();
+        break;
+      case 14:
+        worm(1, 250);
+        break;
+      case 15:
+        worm(0, 250);
+        break; 
       default:
         clearAll();
         delay(50);
     }
+}
+
+void followNoise() {
+  clearAll();
+  if (lighting != 0) {
+    pickColor();
+    setAll();
+    FastLED.show();
+    FastLED.delay(500);
+    clearAll();
+    FastLED.delay(500);
+  }
+}
+
+void LEDController(void* pvParameters) {
+  for (;;) {
+    if (audio_mode == 0 ) { 
+      followSong();
+    } else {
+      followNoise();
+    }
+
+    
   }
 }
 

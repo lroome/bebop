@@ -9,6 +9,9 @@
 #include "FastLED.h"
 #include "soc/rtc_wdt.h"
 
+#include <MacroDebugger.h>
+
+#define DEMO
 
 // I2s
 //#define I2S_DOUT 25
@@ -27,7 +30,7 @@
 #define INITIAL_GAIN 1.0
 #define MAX_GAIN 4.0
 #define MIN_GAIN 0.0
-#define GAIN_STEP 0.5
+#define GAIN_STEP 0.2
 volatile float gain = INITIAL_GAIN;
 
 #define FIRST_TRACK 1
@@ -57,6 +60,7 @@ volatile int color_loops = 0;
 volatile int row_loops = 0;
 volatile int col_loops = 0;
 volatile int curr_dot = 0;
+volatile int audio_mode = 0;
 
 volatile uint8_t currentSong = 0;
 volatile uint8_t futureSong = 0;
@@ -109,8 +113,10 @@ void initializeTasks() {
 
   My_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(My_timer, &onTimer, true);
-  timerAlarmWrite(My_timer, 500000, true);
+  timerAlarmWrite(My_timer, 250000, true);
+  timerSetAutoReload(My_timer, true);
   timerAlarmEnable(My_timer); //start timer
+
 }
 
 void sdSetup() {
@@ -128,18 +134,22 @@ void audioSetup() {
 
   out->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
   out->SetGain(INITIAL_GAIN);
-  file = new AudioFileSourceSD("/group1/1.mp3");
+  //out->SetBitsPerSample(128);
+  //out->SetRate(10);
+  file = new AudioFileSourceSD("/group0/1.mp3");
   mp3->begin(file, out);  //Start playing the track loaded
   mp3->stop();
 }
 
 void audioUp() {
+  Serial.println("Increasing volume");
   gain += GAIN_STEP;
   if (gain > MAX_GAIN) gain = MAX_GAIN;
   out->SetGain(gain);
 }
 
 void audioDown() {
+  Serial.println("Decreasing volume");
   gain -= GAIN_STEP;
   if (gain < MIN_GAIN) gain = MIN_GAIN;
   out->SetGain(gain);
@@ -245,28 +255,36 @@ void setup() {
   initializeTasks();
 
   // remove these lines before shipping.
+  #ifdef DEMO
   track = 1;
   setTrack(0);
+  #endif 
 }
 
 
 void setTrack(int pos) {
-  //Stop the current track if playing
   
+
   char buffer[20];
-  sprintf(buffer, "/group1/%d.mp3", track);
+  sprintf(buffer, "/group%d/%d.mp3", audio_mode, track);
   Serial.println(buffer);
 
   file = new AudioFileSourceSD(buffer);
   if (pos > 0) {
     Serial.println(file->seek(pos, SEEK_SET));
   }
+  
+  //Stop the current track if playing
   if (playing && mp3->isRunning()) mp3->stop();
   mp3->begin(file, out);  //Start playing the track loaded
   
   lighting = track;
   loadTrack = 0;
-  playing = 1;
+  if (track != 0) {
+    playing = 1;
+  } else {
+    playing = 0;    
+  }
 }
 
 
@@ -276,15 +294,18 @@ void changeSongAndLights() {
     lighting = futureSong;
     currentSong = futureSong;
     pauseLocation = file->getPos();
-    loadTrack = 1;
-    
+    loadTrack = 1;   
   }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   //
-
+  if (lastBeat != beats) {
+   // Serial.print("beat ");
+   // Serial.println(beats);
+    lastBeat = beats;
+  }
   changeSongAndLights();
 
   if (loadTrack) setTrack(pauseLocation);  //Load the track we want to play
