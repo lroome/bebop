@@ -11,7 +11,7 @@
 
 #include <MacroDebugger.h>
 
-#define DEMO
+#define DEMO1
 
 // I2s
 //#define I2S_DOUT 25
@@ -33,9 +33,9 @@
 #define GAIN_STEP 0.2
 volatile float gain = INITIAL_GAIN;
 
-#define FIRST_TRACK 1
-#define LAST_TRACK 3
-volatile int song = 1;
+#define FIRST_TRACK 0
+#define LAST_TRACK 2
+volatile int song = 0;
 volatile int track = FIRST_TRACK;
 
 #define FIRST_PATTERN 1
@@ -61,6 +61,7 @@ volatile int row_loops = 0;
 volatile int col_loops = 0;
 volatile int curr_dot = 0;
 volatile int audio_mode = 0;
+volatile uint8_t sound_effect_song_interrupted = -1;
 
 volatile uint8_t currentSong = 0;
 volatile uint8_t futureSong = 0;
@@ -134,8 +135,6 @@ void audioSetup() {
 
   out->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
   out->SetGain(INITIAL_GAIN);
-  //out->SetBitsPerSample(128);
-  //out->SetRate(10);
   file = new AudioFileSourceSD("/group0/1.mp3");
   mp3->begin(file, out);  //Start playing the track loaded
   mp3->stop();
@@ -157,15 +156,25 @@ void audioDown() {
 
 void nextSong() {
   Serial.println("nextSong<<");
-  Serial.println(track);
-  track++;
-  if (track > LAST_TRACK) track = FIRST_TRACK;
+  Serial.println(audio_mode);
+  audio_mode++;
+  if (audio_mode > LAST_TRACK) audio_mode = FIRST_TRACK;
   if (mp3->isRunning()) pauseLocation = file->getPos();
-  loadTrack = track;
-  lighting = track;
+  loadTrack = audio_mode;
+  lighting = audio_mode;
   playing = 1;
-  Serial.println(track);
   Serial.println("nextSong>>");
+}
+
+void soundEffect() {
+  // save current song and position
+  sound_effect_song_interrupted = audio_mode;
+
+  // pick and play random sound effect  
+}
+
+void restoreFromSoundEffect() {
+  // restore older song after a sound effect
 }
 
 void previousSong() {
@@ -221,7 +230,6 @@ void playPause() {
     pauseLocation = file->getPos();
     Serial.println(pauseLocation);
     out->stop();
-    actionsOff();
 
   } else if (pauseLocation > 0) {
     Serial.println("Resume");
