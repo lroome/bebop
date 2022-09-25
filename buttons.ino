@@ -2,8 +2,8 @@
 
 // constants won't change. They're used here to set pin numbers:
 
-#define pinCount 6
-const int buttonPins[] = { 36, 39, 34, 35, 32, 33 };
+#define pinCount 5
+const int buttonPins[] = { 39, 35, 32, 33, 34 };
 const int ledPin = 13;  // the number of the LED pin
 
 // Variables will change:
@@ -17,11 +17,11 @@ unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 
-BfButton btn1(BfButton::STANDALONE_DIGITAL, 39, false, LOW);
-BfButton btn2(BfButton::STANDALONE_DIGITAL, 34, false, LOW);
-BfButton btn3(BfButton::STANDALONE_DIGITAL, 35, false, LOW);
-BfButton btn4(BfButton::STANDALONE_DIGITAL, 32, false, LOW);
-BfButton btn5(BfButton::STANDALONE_DIGITAL, 33, false, LOW);
+BfButton btn1(BfButton::STANDALONE_DIGITAL, buttonPins[0], false, LOW);
+BfButton btn2(BfButton::STANDALONE_DIGITAL, buttonPins[1], false, LOW);
+BfButton btn3(BfButton::STANDALONE_DIGITAL, buttonPins[2], false, LOW);
+BfButton btn4(BfButton::STANDALONE_DIGITAL, buttonPins[3], false, LOW);
+BfButton btn5(BfButton::STANDALONE_DIGITAL, buttonPins[4], false, LOW);
 
 
 void buttonSetup() {
@@ -118,7 +118,6 @@ void button4Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
        bitWrite(futureSong, 3, !bitRead(futureSong, 3));
-      
       break;
     case BfButton::DOUBLE_PRESS:
       nextSong();
@@ -136,7 +135,7 @@ void button5Handler(BfButton *btn, BfButton::press_pattern_t pattern) {
   switch (pattern) {
     case BfButton::SINGLE_PRESS:
       Serial.println(" pressed.");
-      
+      soundEffect();
       break;
     case BfButton::DOUBLE_PRESS:
       Serial.println(" double pressed.");

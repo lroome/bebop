@@ -13,11 +13,6 @@
 
 #define DEMO1
 
-// I2s
-//#define I2S_DOUT 25
-//#define I2S_LRC 26
-//#define I2S_BCLK 27
-
 #define I2S_DOUT 27
 #define I2S_LRC 25
 #define I2S_BCLK 26
@@ -42,11 +37,17 @@ volatile int track = FIRST_TRACK;
 #define LAST_PATTERN 1
 volatile int pattern = FIRST_PATTERN;
 
+#define FX_GROUP 1
 
 
 //Initialize ESP8266 Audio Library classes
 AudioGeneratorMP3 *mp3;
 AudioFileSourceSD *file;
+
+// sound effect 
+AudioGeneratorMP3 *mp3_fx;
+AudioFileSourceSD *file_fx;
+
 AudioOutputI2S *out;
 
 volatile bool playing = 0;
@@ -131,14 +132,23 @@ void sdSetup() {
 
 void audioSetup() {
   out = new AudioOutputI2S();
-  mp3 = new AudioGeneratorMP3();
-
   out->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  out->SetGain(INITIAL_GAIN);
-  file = new AudioFileSourceSD("/group0/1.mp3");
+  out->SetGain(MIN_GAIN);
+  
+  mp3 = new AudioGeneratorMP3();
+  file = new AudioFileSourceSD();
+
+  mp3_fx = new AudioGeneratorMP3();
+  file_fx = new AudioFileSourceSD();
+  file->open("/group0/1.mp3");
+
   mp3->begin(file, out);  //Start playing the track loaded
   mp3->stop();
+  out->SetGain(INITIAL_GAIN);
+  file->close();
 }
+
+/**************************** Other Actions ***********************/
 
 void audioUp() {
   Serial.println("Increasing volume");
@@ -154,9 +164,9 @@ void audioDown() {
   out->SetGain(gain);
 }
 
+
 void nextSong() {
   Serial.println("nextSong<<");
-  Serial.println(audio_mode);
   audio_mode++;
   if (audio_mode > LAST_TRACK) audio_mode = FIRST_TRACK;
   if (mp3->isRunning()) pauseLocation = file->getPos();
@@ -166,16 +176,6 @@ void nextSong() {
   Serial.println("nextSong>>");
 }
 
-void soundEffect() {
-  // save current song and position
-  sound_effect_song_interrupted = audio_mode;
-
-  // pick and play random sound effect  
-}
-
-void restoreFromSoundEffect() {
-  // restore older song after a sound effect
-}
 
 void previousSong() {
   track--;
@@ -210,6 +210,40 @@ void actionsOff() {
   timerAlarmDisable(My_timer);
 }
 
+/**************************** End Other Actions ***********************/
+
+/************************** FX Actions *************************/
+
+void soundEffect() {
+  // save current song and position
+  pauseMain();
+  if(mp3->isRunning()) {mp3->stop();}
+  // pick and play random sound effect  
+  
+  char buffer[20];
+  sprintf(buffer, "/group%d/%d.mp3", FX_GROUP, random(1,15));
+  Serial.println(buffer);
+  
+  if (file_fx->isOpen()) {file_fx->close();}
+  Serial.println("was closed");
+  file_fx->open(buffer);
+  Serial.println("was opened");
+  out->begin();
+  mp3_fx->begin(file_fx, out);  //Start playing the track loaded
+ 
+}
+
+
+void stop_fx() {
+  mp3_fx->stop();
+  out->stop();
+  if (file_fx->isOpen()) {file_fx->close();}
+}
+
+/**************************  End FX Actions *************************/
+
+
+/************************** Song Actions *************************/
 
 // stop playing the track
 void stop() {
@@ -223,32 +257,82 @@ void stop() {
   Serial.println(beats);
 }
 
-// play or pause the track
-void playPause() {
+
+
+void pauseMain() {
   if (playing) {
     Serial.println("Pause");
     pauseLocation = file->getPos();
     Serial.println(pauseLocation);
     out->stop();
+    Serial.println("Pause");
+  }
+}
 
-  } else if (pauseLocation > 0) {
+void resumeMain() {
+if (pauseLocation > 0) {
     Serial.println("Resume");
     out->begin();
     actionsOn();
 
     pauseLocation = 0;
+  }  
+}
+
+void playMain() {
+  Serial.println("Play");
+  loadTrack = track;
+  resetBeats();
+  actionsOn();
+}
+
+// play or pause the track
+void playPause() {
+  if (playing) {
+    pauseMain();
+  } else if (pauseLocation > 0) {
+    resumeMain();
   } else {
-    Serial.println("Play");
-    loadTrack = track;
-    resetBeats();
-    actionsOn();
+    playMain();
   }
 }
 
+void setTrack(int pos) {
+  
+  //Stop the current track if playing
+  if (mp3->isRunning()) {mp3->stop();}
+  
+  char buffer[20];
+  sprintf(buffer, "/group%d/%d.mp3", audio_mode, track);
+  Serial.println(buffer);
+  if (file->isOpen()) { file->close();}
+  file->open(buffer);
+  if (pos > 0) { Serial.println(file->seek(pos, SEEK_SET));}
+  
+  mp3->begin(file, out);  //Start playing the track loaded
+  Serial.printf("is running: %d", mp3->isRunning());
+
+  lighting = track;
+  loadTrack = 0;
+  playing = (track != 0);
+}
+
+/************************** End Song Actions *************************/
+
+void changeSongAndLights() {
+  if (futureSong != currentSong) {
+    track = futureSong;
+    lighting = futureSong;
+    currentSong = futureSong;
+    pauseLocation = file->getPos();
+    loadTrack = 1;   
+  }
+}
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  randomSeed(analogRead(0));
   rtc_wdt_protect_off();
   while (!Serial) {
     ;  // wait for serial port to connect. Needed for native USB port only
@@ -264,46 +348,9 @@ void setup() {
 
   // remove these lines before shipping.
   #ifdef DEMO
-  track = 1;
-  setTrack(0);
+  //track = 1;
+ // setTrack(0);
   #endif 
-}
-
-
-void setTrack(int pos) {
-  
-
-  char buffer[20];
-  sprintf(buffer, "/group%d/%d.mp3", audio_mode, track);
-  Serial.println(buffer);
-
-  file = new AudioFileSourceSD(buffer);
-  if (pos > 0) {
-    Serial.println(file->seek(pos, SEEK_SET));
-  }
-  
-  //Stop the current track if playing
-  if (playing && mp3->isRunning()) mp3->stop();
-  mp3->begin(file, out);  //Start playing the track loaded
-  
-  lighting = track;
-  loadTrack = 0;
-  if (track != 0) {
-    playing = 1;
-  } else {
-    playing = 0;    
-  }
-}
-
-
-void changeSongAndLights() {
-  if (futureSong != currentSong) {
-    track = futureSong;
-    lighting = futureSong;
-    currentSong = futureSong;
-    pauseLocation = file->getPos();
-    loadTrack = 1;   
-  }
 }
 
 void loop() {
@@ -321,6 +368,13 @@ void loop() {
   if (playing && mp3->isRunning()) {
     if (!mp3->loop() || requestStop) {
       stop();
+    }
+    
+  } else if (mp3_fx->isRunning()) {
+    if (!mp3_fx->loop()) {
+      stop_fx();
+      setTrack(pauseLocation);
+      resumeMain();
     }
   }
 }
