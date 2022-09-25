@@ -37,7 +37,7 @@ volatile int track = FIRST_TRACK;
 #define LAST_PATTERN 1
 volatile int pattern = FIRST_PATTERN;
 
-#define FX_GROUP 1
+#define FX_GROUP 10
 
 
 //Initialize ESP8266 Audio Library classes
